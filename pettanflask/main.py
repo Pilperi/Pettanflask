@@ -453,7 +453,7 @@ def lataa_biisi(*args):
         errmsg = f"Polku {polku} ei ole validi (ei kamaa {juuri} jälkeen)."
         paluuarvo["VIRHE"] = errmsg
         koodi = 400
-    alipolku = polku[juuri+1:]
+    alipolku = polku[len(juuri)+1:]
     if not os.path.isfile(os.path.join(oikeapolku, alipolku)):
         errmsg = f"{alipolku} ei ole olemassaoleva tiedosto."
         paluuarvo["VIRHE"] = errmsg
