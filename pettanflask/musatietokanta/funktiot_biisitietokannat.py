@@ -56,6 +56,7 @@ def etsi_puusta(puu, hakudikti, artistipuuna=False):
         errmsg = "Artistipuun diktimuunnosta ei ole vielä implementoitu..."
         LOGGER.error(errmsg)
         paluuarvo["VIRHE"] = errmsg
+    hakutulokset.kansio = puu.kansio
     paluuarvo["VASTAUS"] = hakutulokset.diktiksi()
     return paluuarvo
 

@@ -449,7 +449,7 @@ def lataa_biisi(*args):
         koodi = 404
     # polku rakenteella nimi/ali/polku/tiedos.to
     # eikä /nimi/ali/polku/tiedos.to
-    if len(polku) <= juuri+1:
+    if len(polku) <= len(juuri)+1:
         errmsg = f"Polku {polku} ei ole validi (ei kamaa {juuri} jälkeen)."
         paluuarvo["VIRHE"] = errmsg
         koodi = 400
