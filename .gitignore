@@ -1,0 +1,5 @@
+*.tietokanta
+*.ini
+*egg-info
+*__pycache__
+.directory
