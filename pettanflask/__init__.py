@@ -16,7 +16,10 @@ LOKAALI_KONE = os.path.basename(KOTIKANSIO)
 
 # Luetaan asetukset INI-tiedostosta, jos sellainen löytyy.
 ASETUSTIEDOSTO = os.path.join(TYOKANSIO, "pettanvakiot.ini")
-LOGGER.info(
+# Tiedostohallinnan määritykset tiedostohallinan ini-tiedostossa
+ASETUSTIEDOSTO_TIETOKANNAT = os.path.join(KOTIKANSIO, ".tiedostohallinta", "kansiovakiot.ini")
+#LOGGER.info(
+print(
     f"Paikallinen kone {LOKAALI_KONE}"
     +f", kotikansio {KOTIKANSIO}"
     +f", työkansio {TYOKANSIO}"

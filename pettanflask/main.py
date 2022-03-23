@@ -134,7 +134,7 @@ def musatietokannat():
 
     Ulos
     ----
-    json-dikti
+    json-dikti tai binääri
         Sisältää avaimet "VASTAUS" ja "VIRHE", missä
         vastauksen arvo riippuu siitä mitä ollaan pyydetty
         ja virhe on joko str tai None, str vain jos jokin kusi.
@@ -410,10 +410,11 @@ def lataa_biisi(*args):
     Ulos
     ----
     response
-        Standardi vastaus, eli flaskin HTTP-JSON vastauskoodin kera.
-        Diktiosiossa arvot {"VASTAUS": bin, "VIRHE": str tai None}
-        missä vastauksena biisi binääridatana ja virheen alla
-        virhekuvatusstringi jos jokin mättää.
+        Vastaus on joko haluttu biisi binääridatana,
+        tai jos jokin meni pieleen niin JSON jossa selitetty mikä mättää.
+        Nämä on (vähemmän yllättäen) erotettavissa vastauskoodin perusteella,
+        200 onnistuessa ja jotain muuta epäonnistuessa.
+        Virhekuvaus on json-paluuarvon kentässä "VIRHE"
     '''
     paluuarvo = {
         "VASTAUS": None,

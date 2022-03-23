@@ -12,41 +12,24 @@ LOGGER = logging.getLogger(__name__)
 
 from tiedostohallinta.class_tiedostopuu import Tiedostopuu
 from tiedostohallinta.class_biisiselaus import Artistipuu
+from pettanflask import KOTIKANSIO, TYOKANSIO, LOKAALI_KONE, ASETUSTIEDOSTO_TIETOKANNAT
 
 # Lue tiedostopolut kotikansion .ini-tiedostosta
-KOTIKANSIO = os.path.expanduser("~")
-TYOKANSIO = os.path.join(KOTIKANSIO, ".tiedostohallinta")
-LOKAALI_KONE = os.path.basename(KOTIKANSIO)
+#KOTIKANSIO = os.path.expanduser("~")
+#TYOKANSIO = os.path.join(KOTIKANSIO, ".tiedostohallinta")
+#LOKAALI_KONE = os.path.basename(KOTIKANSIO)
 
 # Luetaan asetukset INI-tiedostosta, jos sellainen löytyy.
-ASETUSTIEDOSTO = os.path.join(TYOKANSIO, "kansiovakiot.ini")
+#ASETUSTIEDOSTO_TIETOKANNAT = os.path.join(TYOKANSIO, "kansiovakiot.ini")
 LOGGER.info(
     f"Paikallinen kone {LOKAALI_KONE}"
     +f", kotikansio {KOTIKANSIO}"
     +f", työkansio {TYOKANSIO}"
-    +f", asetustiedosto {ASETUSTIEDOSTO}"
+    +f", asetustiedosto {ASETUSTIEDOSTO_TIETOKANNAT}"
     )
-config = configparser.ConfigParser(default_section="pilperi")
-
-# Lue asetustiedosto
-if os.path.isfile(ASETUSTIEDOSTO):
-    config.read(ASETUSTIEDOSTO)
-else:
-    errmsg = f"Ei löydy asetustiedostoa {ASETUSTIEDOSTO}!"
-    LOGGER.error(errmsg)
-    raise OSError(errmsg)
-
-# Lue tietokantojen sijainnit ja tyypit asetuksista
-if LOKAALI_KONE not in config:
-    errmsg = (
-        f"Ei löydy asetuskokoonpanoa {LOKAALI_KONE}"
-        +f" (löytyy: {[nimi for nimi in config]})"
-        )
-    LOGGER.error(errmsg)
-    raise OSError(errmsg)
-TIETOKANNAT = json.loads(config.get(LOKAALI_KONE, "paikalliset_tietokannat"))
 
 # Tiedostopuut dictinä, {str: Tiedostopuu tai None}
+TIETOKANNAT = {}
 BIISIPUUT = {}
 ARTISTIPUUT = {}
 PAIKALLISPOLUT = {}
@@ -82,7 +65,43 @@ def lue_biisitietokannat():
             BIISIPUUT[nimi] = puu
             ARTISTIPUUT[nimi] = Artistipuu(puu) # tää muunnos on aika rumba
 
+def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAALI_KONE):
+    '''
+    Määritä asetukset ini-tiedoston avulla.
+    Mahdollistaa eri asetustiedoston käytön eri ajokerroilla
+    (esim. yksikkötesteissä eri asetukset kuin normikäytössä)
+
+    Sisään
+    ------
+    polku : str
+        ini-tiedoston polku.
+        Tiedostolla sama rakenne kuin oikealla asetustiedostolla.
+    asetusnimi : str
+        Asetussetti joka ini-tiedostosta olisi tarkoitus lukea.
+    '''
+    global TIETOKANNAT
+    config = configparser.ConfigParser(default_section="pilperi")
+
+    # Lue asetustiedosto
+    if os.path.isfile(polku):
+        config.read(polku)
+    else:
+        errmsg = f"Ei löydy asetustiedostoa {polku}"
+        LOGGER.error(errmsg)
+        raise OSError(errmsg)
+
+    # Lue tietokantojen sijainnit ja tyypit asetuksista
+    if asetusnimi not in config:
+        errmsg = (
+            f"Ei löydy asetuskokoonpanoa {asetusnimi}"
+            +f" (löytyy: {[nimi for nimi in config]})"
+            )
+        LOGGER.error(errmsg)
+        raise OSError(errmsg)
+    TIETOKANNAT = json.loads(config.get(asetusnimi, "paikalliset_tietokannat"))
+    lue_biisitietokannat()
+
 
 # Luetaan tietokannat mielellään vain kun tarvitsee
 if not BIISIPUUT:
-    lue_biisitietokannat()
+    lue_asetukset_tiedostosta()
