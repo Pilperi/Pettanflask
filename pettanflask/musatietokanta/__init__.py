@@ -14,19 +14,13 @@ from tiedostohallinta.class_tiedostopuu import Tiedostopuu
 from tiedostohallinta.class_biisiselaus import Artistipuu
 from pettanflask import KOTIKANSIO, TYOKANSIO, LOKAALI_KONE, ASETUSTIEDOSTO_TIETOKANNAT
 
-# Lue tiedostopolut kotikansion .ini-tiedostosta
-#KOTIKANSIO = os.path.expanduser("~")
-#TYOKANSIO = os.path.join(KOTIKANSIO, ".tiedostohallinta")
-#LOKAALI_KONE = os.path.basename(KOTIKANSIO)
-
-# Luetaan asetukset INI-tiedostosta, jos sellainen löytyy.
-#ASETUSTIEDOSTO_TIETOKANNAT = os.path.join(TYOKANSIO, "kansiovakiot.ini")
 LOGGER.info(
     f"Paikallinen kone {LOKAALI_KONE}"
     +f", kotikansio {KOTIKANSIO}"
     +f", työkansio {TYOKANSIO}"
     +f", asetustiedosto {ASETUSTIEDOSTO_TIETOKANNAT}"
     )
+
 
 # Tiedostopuut dictinä, {str: Tiedostopuu tai None}
 TIETOKANNAT = {}
@@ -80,7 +74,7 @@ def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAA
         Asetussetti joka ini-tiedostosta olisi tarkoitus lukea.
     '''
     global TIETOKANNAT
-    config = configparser.ConfigParser(default_section="pilperi")
+    config = configparser.ConfigParser(default_section=asetusnimi)
 
     # Lue asetustiedosto
     if os.path.isfile(polku):

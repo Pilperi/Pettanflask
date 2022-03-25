@@ -14,11 +14,6 @@ from tiedostohallinta.class_tiedostopuu import Tiedostopuu
 from tiedostohallinta.class_biisiselaus import Artistipuu
 from pettanflask import KOTIKANSIO, TYOKANSIO, LOKAALI_KONE, ASETUSTIEDOSTO_TIETOKANNAT
 
-# Lue tiedostopolut kotikansion .ini-tiedostosta
-#KOTIKANSIO = os.path.expanduser("~")
-#TYOKANSIO = os.path.join(KOTIKANSIO, ".tiedostohallinta")
-#LOKAALI_KONE = os.path.basename(KOTIKANSIO)
-
 # Thumbnailien peruskansio:
 THUMBIKANSIO = os.path.join(KOTIKANSIO, ".pettanflask", "Thumbit")
 if not os.path.exists(THUMBIKANSIO):
@@ -35,8 +30,6 @@ KUVATIEDOSTOT = (
     "webm"
     )
 
-# Luetaan asetukset INI-tiedostosta, jos sellainen löytyy.
-#ASETUSTIEDOSTO = os.path.join(TYOKANSIO, "kansiovakiot.ini")
 LOGGER.info(
     f"Paikallinen kone {LOKAALI_KONE}"
     +f", kotikansio {KOTIKANSIO}"

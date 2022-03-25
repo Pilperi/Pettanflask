@@ -16,42 +16,61 @@ LOKAALI_KONE = os.path.basename(KOTIKANSIO)
 
 # Luetaan asetukset INI-tiedostosta, jos sellainen löytyy.
 ASETUSTIEDOSTO = os.path.join(TYOKANSIO, "pettanvakiot.ini")
-# Tiedostohallinnan määritykset tiedostohallinan ini-tiedostossa
 ASETUSTIEDOSTO_TIETOKANNAT = os.path.join(KOTIKANSIO, ".tiedostohallinta", "kansiovakiot.ini")
-#LOGGER.info(
-print(
+LOGGER.info(
     f"Paikallinen kone {LOKAALI_KONE}"
     +f", kotikansio {KOTIKANSIO}"
     +f", työkansio {TYOKANSIO}"
     +f", asetustiedosto {ASETUSTIEDOSTO}"
     )
-config = configparser.ConfigParser(default_section="taira")
 
-# Lue asetustiedosto
-if os.path.isfile(ASETUSTIEDOSTO):
-    config.read(ASETUSTIEDOSTO)
-else:
-    errmsg = f"Ei löydy asetustiedostoa {ASETUSTIEDOSTO}!"
-    LOGGER.error(errmsg)
-    raise OSError(errmsg)
+IP_OSOITE = None
 
-# Lue tietokantojen sijainnit ja tyypit asetuksista
-if LOKAALI_KONE not in config:
-    errmsg = (
-        f"Ei löydy asetuskokoonpanoa {LOKAALI_KONE}"
-        +f" (löytyy: {[nimi for nimi in config]})"
-        )
-    LOGGER.error(errmsg)
-    raise OSError(errmsg)
+def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO, asetusnimi=LOKAALI_KONE):
+    '''
+    Määritä asetukset ini-tiedoston avulla.
+    Mahdollistaa eri asetustiedoston käytön eri ajokerroilla
+    (esim. yksikkötesteissä eri asetukset kuin normikäytössä)
 
-IP_OSOITE = config.get(LOKAALI_KONE, "ip")
-PORTTI = config.get(LOKAALI_KONE, "portti")
+    Sisään
+    ------
+    polku : str
+        ini-tiedoston polku.
+        Tiedostolla sama rakenne kuin oikealla asetustiedostolla.
+    asetusnimi : str
+        Asetussetti joka ini-tiedostosta olisi tarkoitus lukea.
+    '''
+    global IP_OSOITE
+    global PORTTI
+    global IP
+    config = configparser.ConfigParser(default_section=asetusnimi)
 
-# Jos ei annettu, koeta selvittää
+    # Lue asetustiedosto
+    if os.path.isfile(polku):
+        config.read(polku)
+    else:
+        errmsg = f"Ei löydy asetustiedostoa {polku}"
+        LOGGER.error(errmsg)
+        raise OSError(errmsg)
+
+    # Lue tietokantojen sijainnit ja tyypit asetuksista
+    if asetusnimi not in config:
+        errmsg = (
+            f"Ei löydy asetuskokoonpanoa {asetusnimi}"
+            +f" (löytyy: {[nimi for nimi in config]})"
+            )
+        LOGGER.error(errmsg)
+        raise OSError(errmsg)
+    IP_OSOITE = config.get(LOKAALI_KONE, "ip")
+    PORTTI = config.get(LOKAALI_KONE, "portti")
+    # Jos ei annettu, koeta selvittää
+    if not IP_OSOITE:
+        from requests import get as rget
+        IP_OSOITE = rget("https://api.ipify.org").content.decode("ascii")
+    if not PORTTI:
+        PORTTI = "5000"
+    IP = f"{IP_OSOITE}:{PORTTI}"
+
+# Luetaan tietokannat mielellään vain kun tarvitsee
 if not IP_OSOITE:
-    from requests import get as rget
-    IP_OSOITE = rget("https://api.ipify.org").content.decode("ascii")
-if not PORTTI:
-    PORTTI = "5000"
-
-IP = f"{IP_OSOITE}:{PORTTI}"
+    lue_asetukset_tiedostosta()
