@@ -5,7 +5,7 @@ import os
 import subprocess
 
 from pettanflask import IP
-import pettanflask.html as vakiot
+import pettanflask.pettan_html as vakiot
 
 
 def kuvaruudukko(kuvakansio, hakutermi, sivu, n, m):
@@ -14,7 +14,7 @@ def kuvaruudukko(kuvakansio, hakutermi, sivu, n, m):
 	kuvakansion hakutermiä vastaavista kuvista n x m ruudukko,
 	annetulla sivunumerolla (ts. ruudukoita monta).
 	Luo samalla tarvittavat thumbnailit.
-	
+
 	Sisään
 	------
 	kuvakansio : str
@@ -48,7 +48,7 @@ def kuvaruudukko(kuvakansio, hakutermi, sivu, n, m):
   '''
 	kohdetiedostot = [""]*len(kohdekuvat)
 	for k,kuvatiedosto in enumerate(kohdekuvat):
-		lahdepolku = f"/mnt/data/Jouni/INTERNET/{kuvakansio}/{kuvatiedosto}"
+		lahdepolku = f"{vakiot.INTERNET}/{kuvakansio}/{kuvatiedosto}"
 		kohdepolku = f"{pohja}/{kuvakansio}/{sivu}"
 		kohdetiedostot[k] = "{kohdepolku}/{kuvatiedosto}"
 		if not os.path.exists(kohdetiedostot[k]):
@@ -58,13 +58,13 @@ def kuvaruudukko(kuvakansio, hakutermi, sivu, n, m):
 				lahdepolku
 				])
 		htmlstr += (
-			f"    <a href=\"http://{IP}/INTERNET/{kuvakansio}/{kuvatiedosto}\">"
-			+f"<img src=\"http://{IP}/thumb/{kuvakansio}/{sivu}/{kuvatiedosto}\" ></a>\n"
+			f"    <a href=\"http://{IP}/html/INTERNET/{kuvakansio}/{kuvatiedosto}\">"
+			+f"<img src=\"http://{IP}/html/thumb/{kuvakansio}/{sivu}/{kuvatiedosto}\" ></a>\n"
 			)
 		if k and not k%n:
 			htmlstr += "</div><div class=\"column\">"
 	htmlstr += "  </div>\n</div>\n"
-	kutsupohja = f"http://{IP}/hauskatkuvat/{kuvakansio}"
+	kutsupohja = f"http://{IP}/html/hauskatkuvat/{kuvakansio}"
 	kutsupohja += f"&etsi={hakutermi}"*isinstance(hakutermi, str)
 	edellinenkutsu = kutsupohja + f"&s={sivu-1}"
 	seuraavakutsu = kutsupohja + f"&s={sivu+1}"
@@ -72,16 +72,16 @@ def kuvaruudukko(kuvakansio, hakutermi, sivu, n, m):
 		htmlstr+= f"<form><button type=\"button\"  onclick=\"location.href=\'{edellinenkutsu}\'\">Edellinen ({sivu-1})</button></form>"
 	if (sivu+1)*kuvia_per_sivu < len(kuvat):
 		htmlstr+= f"<form><button type=\"button\"  onclick=\"location.href=\'{seuraavakutsu}\'\">Seuraava ({sivu+1})</button></form>\n"
-	htmlstr += kansion_hakunappi(kuvakansio)
+	htmlstr += kansion_hakunappi(kuvakansio, nykyurl=f"http://{IP}/html/hauskatkuvat/{kuvakansio}")
 	htmlstr += "</html>"
 	return htmlstr, kohdetiedostot
 
 
-def kansion_hakunappi(kansio):
-	htmlstr = '''<form action = "http://{}/etsikuvaa" method = "post">
+def kansion_hakunappi(kansio, nykyurl):
+	htmlstr = '''<form action = "{}" method = "post">
 	<p><input type="text" name="termi" /></p>
 	<p><input type="hidden" value="{}" name="kansio"/></p>
-</form>'''.format(IP, kansio)
+</form>'''.format(nykyurl, kansio)
 	return htmlstr
 
 
@@ -95,13 +95,13 @@ def hae_alikansiot(kansio):
 	return alikansiot
 
 
-def hauskatkansiot():
+def hauskatkansiot(kanta):
 	'''
 	Anna linkit kaikkiin kansioihin joita on katseltavissa.
 	'''
-	alikansiot = hae_alikansiot(vakiot.INTERNET)
+	alikansiot = hae_alikansiot(kanta)
 	htmlstr = '''<div class="text"><pre>'''
 	for alikansio in alikansiot:
-		htmlstr += "<a href=\"http://{}/hauskatkuvat/{}\">{}</a>\n".format(IP, alikansio, alikansio)
+		htmlstr += "<a href=\"http://{}/html/hauskatkuvat/{}\">{}</a>\n".format(IP, alikansio, alikansio)
 	htmlstr += '''</pre></div>'''
 	return htmlstr

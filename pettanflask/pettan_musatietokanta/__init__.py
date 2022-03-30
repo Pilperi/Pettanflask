@@ -4,16 +4,15 @@ Määritä operointiin tarvittavat tiedostopolut ymv. vakioiksi.
 
 import os
 import json
+import logging
 import configparser
 import pkg_resources
-import logging
-
-LOGGER = logging.getLogger(__name__)
 
 from tiedostohallinta.class_tiedostopuu import Tiedostopuu
 from tiedostohallinta.class_biisiselaus import Artistipuu
 from pettanflask import KOTIKANSIO, TYOKANSIO, LOKAALI_KONE, ASETUSTIEDOSTO_TIETOKANNAT
 
+LOGGER = logging.getLogger(__name__)
 LOGGER.info(
     f"Paikallinen kone {LOKAALI_KONE}"
     +f", kotikansio {KOTIKANSIO}"
@@ -25,6 +24,7 @@ LOGGER.info(
 # Tiedostopuut dictinä, {str: Tiedostopuu tai None}
 TIETOKANNAT = {}
 BIISIPUUT = {}
+BIISIDIKTIT = {}
 ARTISTIPUUT = {}
 PAIKALLISPOLUT = {}
 
@@ -34,10 +34,7 @@ def lue_biisitietokannat():
     Käyttökelpoinen jos tietokantojen sisältö halutaan
     päivittää ajan tasalle (ts. tietokantatiedosto luetaan uusiksi).
     '''
-    global TIETOKANNAT
-    global PAIKALLISPOLUT
-    global BIISIPUUT
-    global ARTISTIPUUT
+    global TIETOKANNAT, BIISIPUUT, BIISIDIKTIT, ARTISTIPUUT, PAIKALLISPOLUT
     for nimi,tietokanta in TIETOKANNAT.items():
         # Vain biisejä koskevat tiedostopuut
         if tietokanta["tiedostotyyppi"] != "biisi":
@@ -47,16 +44,19 @@ def lue_biisitietokannat():
         # (muttei kaadeta mitään)
         if not os.path.exists(puutiedosto):
             BIISIPUUT[nimi] = None
+            BIISIDIKTIT[nimi] = None
             ARTISTIPUUT[nimi] = None
             PAIKALLISPOLUT[nimi] = None
             continue
-        with open(puutiedosto, "r") as f:
-            puu = Tiedostopuu.diktista(json.load(f))
+        with open(puutiedosto, "r", encoding="utf-8") as filu:
+            dikti = json.load(filu)
+            puu = Tiedostopuu.diktista(dikti)
             # Muokkaa puun juurisolmu juttelumuotoon
             puu.kansio = nimi
             # Juurisolmu yhä palvelinpuolella saatavilla:
             PAIKALLISPOLUT[nimi] = tietokanta["tietokannan_kohde"]
             BIISIPUUT[nimi] = puu
+            BIISIDIKTIT[nimi] = dikti
             ARTISTIPUUT[nimi] = Artistipuu(puu) # tää muunnos on aika rumba
 
 def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAALI_KONE):
@@ -88,7 +88,7 @@ def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAA
     if asetusnimi not in config:
         errmsg = (
             f"Ei löydy asetuskokoonpanoa {asetusnimi}"
-            +f" (löytyy: {[nimi for nimi in config]})"
+            +f" (löytyy: {list(config)})"
             )
         LOGGER.error(errmsg)
         raise OSError(errmsg)

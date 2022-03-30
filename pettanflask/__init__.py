@@ -2,10 +2,11 @@
 Globaalit vakiot.
 '''
 import os
+import logging
 import json
 import configparser
 import pkg_resources
-import logging
+from requests import get as rget
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,9 @@ LOGGER.info(
     +f", asetustiedosto {ASETUSTIEDOSTO}"
     )
 
+IP = None
 IP_OSOITE = None
+PORTTI = 5000
 
 def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO, asetusnimi=LOKAALI_KONE):
     '''
@@ -40,9 +43,7 @@ def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO, asetusnimi=LOKAALI_KONE):
     asetusnimi : str
         Asetussetti joka ini-tiedostosta olisi tarkoitus lukea.
     '''
-    global IP_OSOITE
-    global PORTTI
-    global IP
+    global IP, IP_OSOITE, PORTTI
     config = configparser.ConfigParser(default_section=asetusnimi)
 
     # Lue asetustiedosto
@@ -57,7 +58,7 @@ def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO, asetusnimi=LOKAALI_KONE):
     if asetusnimi not in config:
         errmsg = (
             f"Ei löydy asetuskokoonpanoa {asetusnimi}"
-            +f" (löytyy: {[nimi for nimi in config]})"
+            +f" (löytyy: {list(config)})"
             )
         LOGGER.error(errmsg)
         raise OSError(errmsg)
@@ -65,7 +66,6 @@ def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO, asetusnimi=LOKAALI_KONE):
     PORTTI = config.get(LOKAALI_KONE, "portti")
     # Jos ei annettu, koeta selvittää
     if not IP_OSOITE:
-        from requests import get as rget
         IP_OSOITE = rget("https://api.ipify.org").content.decode("ascii")
     if not PORTTI:
         PORTTI = "5000"

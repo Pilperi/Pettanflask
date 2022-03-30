@@ -55,11 +55,11 @@ config.set(LOKAALI_KONE, "portti", PORTTI)
 
 ASETUSTIEDOSTO = os.path.join(TYOKANSIO, 'pettanvakiot.ini')
 print(f"Tallennetaan asetukset kohteeseen: {ASETUSTIEDOSTO}")
-with open(ASETUSTIEDOSTO, 'w+') as configfile:
-    for key in config.keys():
-        print(key)
-        for asetus in config[key]:
-            print(f"  {asetus} = {config[key][asetus]}")
-    config.write(configfile)
-    print("Tallennettu.")
-
+if not os.path.exists(ASETUSTIEDOSTO):
+    with open(ASETUSTIEDOSTO, 'w+') as configfile:
+        for key in config.keys():
+            print(key)
+            for asetus in config[key]:
+                print(f"  {asetus} = {config[key][asetus]}")
+        config.write(configfile)
+        print("Tallennettu.")

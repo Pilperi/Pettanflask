@@ -5,7 +5,7 @@ jotta juttelufunktioita voi testata.
 '''
 import json
 import requests as req
-from pettanflask import musatietokanta as musapettan
+from pettanflask import pettan_musatietokanta as musapettan
 
 from . import IP, INI
 
@@ -24,20 +24,19 @@ def test_juuri_huonokutsu():
     Katso että palauttaa oikean virhekoodin väärillä TOIMENPIDE-argumenteilla.
     '''
     args = {"TOIMENPIDE": "eiole", "ARGUMENTIT": "eiole"}
-    # Vain put sallittu
-    r = req.get(IP+"musatietokanta")
-    assert r.status_code == 405
     # Ilman json-kenttää
-    r = req.put(IP+"musatietokanta")
+    r = req.post(IP+"musatietokanta")
     assert r.status_code == 400
     # Ei-dictillä json-kentän datalla
-    r = req.put(IP+"musatietokanta", json=1)
+    r = req.post(IP+"musatietokanta", json={1:2})
+    assert r.status_code == 400
     j = r.json()
     assert j.get("VIRHE")
     # Huonolla funktionimellä
-    r = req.put(IP+"musatietokanta", json=args)
+    r = req.post(IP+"musatietokanta", json=args)
+    assert r.status_code == 400
     j = r.json()
-    assert j.get("VIRHE")
+    assert j.get("message") # väärällä datatyypillä virheviesti
 
 
 def test_musatietokanta_tietokannat():
