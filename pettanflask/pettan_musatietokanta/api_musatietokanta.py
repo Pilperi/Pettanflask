@@ -45,14 +45,12 @@ parser_tietokantahaku.add_argument(
     type=str,
     help=f"Suoritettava toimenpide (str). Vaihtoehdot: {list(PYYNTOMAP_HAKU)}",
     choices=list(PYYNTOMAP_HAKU),
+    required=True,
     )
 parser_tietokantahaku.add_argument(
     name="ARGUMENTIT",
     action="append",
-    help=(
-        f"Mahdolliset argumentit pyynnon tueksi: {AGUMENTTIKUVAUKSET} (json)"
-        ),
-    default=[],
+    required=True,
     )
 
 # Biisidatan toimitus
