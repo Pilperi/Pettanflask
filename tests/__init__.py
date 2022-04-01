@@ -33,7 +33,8 @@ def luo_testidata():
     global INI
     global IP_OSOITE
     global PORTTI
-    global TESTIPUU
+    global TESTIPUU_1
+    global TESTIPUU_2
 
     config = configparser.ConfigParser(default_section="testi")
     # Biisit sellaisia että syvennystason kasvaessa numero kasvaa
@@ -103,6 +104,7 @@ def luo_testidata():
     puu = Tiedostopuu.diktista(puudikti)
     def luo_puuttuvat(kansio, vainparilliset=False):
         kansiopolku = kansio.hae_nykyinen_polku()
+        print(kansiopolku)
         if not os.path.exists(kansiopolku):
             os.makedirs(kansiopolku)
         for biisi in kansio.tiedostot:
@@ -115,7 +117,7 @@ def luo_testidata():
             with open(polku, "w+") as f:
                 f.write(biisi.biisinimi)
         for alikansio in kansio.alikansiot:
-            luo_puuttuvat(alikansio)
+            luo_puuttuvat(alikansio, vainparilliset)
     luo_puuttuvat(puu)
     TESTIPUU_1 = puu.copy()
     # Toisessa vaan parilliset

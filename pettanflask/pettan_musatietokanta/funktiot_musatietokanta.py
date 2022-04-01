@@ -65,6 +65,7 @@ def anna_tietokanta(tietokannan_nimi):
             f"Ei löydy tietokantaa nimeltä {tietokannan_nimi}."
             +f" Löytyy: {list(musavak.BIISIPUUT)}"
             )
+        LOGGER.error(errmsg)
         paluuarvo["VIRHE"] = errmsg
         return make_response(jsonify(paluuarvo), 404)
     paluuarvo["VASTAUS"] = puu.diktiksi()
@@ -112,6 +113,7 @@ def etsi_tietokannasta(puu, hakudikti, artistipuuna=False):
         LOGGER.error(errmsg)
         paluuarvo["VIRHE"] = errmsg
         return make_response(jsonify(paluuarvo), 404)
+    puu = musavak.BIISIPUUT[puu]
     haku = Hakukriteerit(hakudikti)
     hakutulokset = haku.etsi_tietokannasta(puu)
     if artistipuuna:
@@ -145,7 +147,7 @@ def anna_latauslista(puu):
     def muodosta_latauslista(puu):
         lista = []
         for tiedosto in puu.tiedostot:
-            lista.append(puu.hae_nykyinen_polku() + f"/{tiedosto.tiedostonimi}")
+            lista.append(puu.hae_nykyinen_polku() + f"{tiedosto.tiedostonimi}")
         for alikansio in puu.alikansiot:
             lista += muodosta_latauslista(alikansio)
         return lista
