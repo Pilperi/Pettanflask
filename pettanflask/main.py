@@ -4,7 +4,7 @@ Hoitaa juttelun eli käytännössä
 kutsuu oikeaa funktiota pyyntöargumentin
 perusteella.
 '''
-
+import os
 import logging
 
 from flask import Flask
@@ -12,6 +12,8 @@ from flask_restful import Api
 
 # Vakiot
 import pettanflask as vakiot
+import pettanflask.pettan_musatietokanta as musavakiot
+import pettanflask.pettan_html as htmlvakiot
 
 # API
 from pettanflask import api_main
@@ -56,6 +58,12 @@ api.add_resource(api_musatietokanta.Musatietokanta_lataus,
 
 #-------------------------------------------------------------------------------
 
+# Devaussetit
 if __name__=="__main__":
-    vakiot.IP = "127.0.0.1:5000"
+    # Testi-ini @ ../
+    inisijainti = os.path.dirname(os.path.dirname(__file__))
+    inisijainti = os.path.join(inisijainti, "tests", "data", "testiasetukset.ini")
+    vakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
+    musavakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
+    htmlvakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
     app.run(debug=True)

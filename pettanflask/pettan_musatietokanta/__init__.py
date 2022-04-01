@@ -53,6 +53,7 @@ def lue_biisitietokannat():
             puu = Tiedostopuu.diktista(dikti)
             # Muokkaa puun juurisolmu juttelumuotoon
             puu.kansio = nimi
+            dikti["kansio"] = nimi
             # Juurisolmu yhä palvelinpuolella saatavilla:
             PAIKALLISPOLUT[nimi] = tietokanta["tietokannan_kohde"]
             BIISIPUUT[nimi] = puu
@@ -73,7 +74,12 @@ def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAA
     asetusnimi : str
         Asetussetti joka ini-tiedostosta olisi tarkoitus lukea.
     '''
-    global TIETOKANNAT
+    global TIETOKANNAT, BIISIPUUT, BIISIDIKTIT, ARTISTIPUUT, PAIKALLISPOLUT
+    TIETOKANNAT = {}
+    BIISIPUUT = {}
+    BIISIDIKTIT = {}
+    ARTISTIPUUT = {}
+    PAIKALLISPOLUT = {}
     config = configparser.ConfigParser(default_section=asetusnimi)
 
     # Lue asetustiedosto

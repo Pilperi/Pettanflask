@@ -5,6 +5,10 @@ import os
 import json
 import configparser
 
+import pettanflask as vakiot
+import pettanflask.pettan_musatietokanta as musavakiot
+import pettanflask.pettan_html as htmlvakiot
+
 from tiedostohallinta.class_tiedostopuu import Tiedostopuu
 from tiedostohallinta.class_biisi import Biisi
 
@@ -38,7 +42,7 @@ def luo_testidata():
         "tiedostonimi": f"{b}.mp3",
         "albuminimi": f"{b}",
         "albumiesittaja": f"{b}",
-        "esittaja": f"{b}",
+        "esittaja": f"{b%2}",
         "biisinimi": f"{b}",
         "vuosi": f"{b}",
         "raita": b,
@@ -127,3 +131,9 @@ def luo_testidata():
 
 if not TESTIPUU_1:
     luo_testidata()
+
+inisijainti = os.path.dirname(os.path.dirname(__file__))
+inisijainti = os.path.join(inisijainti, "tests", "data", "testiasetukset.ini")
+vakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
+musavakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
+htmlvakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")

@@ -2,7 +2,8 @@
 Musapuolen API-funktiot.
 '''
 import os
-from flask import make_response, jsonify, abort, send_from_directory
+import json
+from flask import make_response, jsonify, abort, send_from_directory, request
 from flask_restful import Resource, reqparse
 
 from tiedostohallinta.class_tiedostopuu import Tiedostopuu
@@ -24,10 +25,10 @@ PYYNTOMAP_HAKU = {
     }
 # Argumenttien datatyypit
 ARGUMENTTITYYPIT = {
-    "listaa_tietokannat": [],
+    "listaa_tietokannat": [type(None)],
     "anna_tietokanta": [str],
-    "etsi_tietokannasta": [str, Hakukriteerit],
-    "anna_latauslista": [Tiedostopuu],
+    "etsi_tietokannasta": [str, dict],
+    "anna_latauslista": [dict],
     }
 # Stringimuotoilu
 AGUMENTTIKUVAUKSET = {
@@ -46,11 +47,14 @@ parser_tietokantahaku.add_argument(
     help=f"Suoritettava toimenpide (str). Vaihtoehdot: {list(PYYNTOMAP_HAKU)}",
     choices=list(PYYNTOMAP_HAKU),
     required=True,
+    location="json",
     )
 parser_tietokantahaku.add_argument(
     name="ARGUMENTIT",
+    #type=list,
     action="append",
     required=True,
+    default=[None]
     )
 
 # Biisidatan toimitus
@@ -104,7 +108,11 @@ class Musatietokanta_haku(Resource):
         '''
         args = parser_tietokantahaku.parse_args()
         toimenpide = args.get("TOIMENPIDE")
-        argumentit = args.get("ARGUMENTIT")
+        # Parseri ei osaa hoitaa sisäkkäisiä tyyppitarkastuksia,
+        # lue rautalangalla (läh. dictit taipui str(dict))
+        argumentit = request.get_json(force=True)["ARGUMENTIT"]
+        if not isinstance(argumentit, list):
+            argumentit = [argumentit]
         # Toimenpide määrittelemätön tai tuntematon
         if toimenpide not in PYYNTOMAP_HAKU:
             paluuarvo = {
@@ -112,11 +120,7 @@ class Musatietokanta_haku(Resource):
                 "VIRHE": f"Ei toimintoa pyynnölle TOIMENPIDE={toimenpide}"
                 }
             return make_response(jsonify(paluuarvo), 400)
-        # Targista sisäänmenoargumenttien määrä
-        print(argumentit)
-        print(type(argumentit))
-        if not isinstance(argumentit, list):
-            argumentit = []
+        # Tarkista sisäänmenoargumenttien määrä
         if len(argumentit) != len(ARGUMENTTITYYPIT[toimenpide]):
             paluuarvo = {
                 "VASTAUS": None,
@@ -124,6 +128,19 @@ class Musatietokanta_haku(Resource):
                     f"Toimenpide {toimenpide} vaatii"
                     +f" {len(ARGUMENTTITYYPIT[toimenpide])} argumenttia,"
                     +f" saatiin {len(argumentit)}."
+                    )
+                }
+            return make_response(jsonify(paluuarvo), 400)
+        # Tarkista sisäänmenoargumenttien laatu
+        if not all(isinstance(argumentit[i], ARGUMENTTITYYPIT[toimenpide][i])
+            for i in range(len(argumentit))
+            ):
+            paluuarvo = {
+                "VASTAUS": None,
+                "VIRHE": (
+                    f"Toimenpiteen {toimenpide} argumentit ovat"
+                    +f" {AGUMENTTIKUVAUKSET[toimenpide]}"
+                    +f", saatiin {[type(arg).__name__ for arg in argumentit]}."
                     )
                 }
             return make_response(jsonify(paluuarvo), 400)

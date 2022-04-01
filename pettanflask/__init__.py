@@ -18,11 +18,15 @@ LOKAALI_KONE = os.path.basename(KOTIKANSIO)
 # Luetaan asetukset INI-tiedostosta, jos sellainen löytyy.
 ASETUSTIEDOSTO = os.path.join(TYOKANSIO, "pettanvakiot.ini")
 ASETUSTIEDOSTO_TIETOKANNAT = os.path.join(KOTIKANSIO, ".tiedostohallinta", "kansiovakiot.ini")
-LOGGER.info(
-    f"Paikallinen kone {LOKAALI_KONE}"
-    +f", kotikansio {KOTIKANSIO}"
-    +f", työkansio {TYOKANSIO}"
+kokoonpatostr = (
+    f"Paikallinen kone {LOKAALI_KONE}\n"
+    +f", kotikansio {KOTIKANSIO}\n"
+    +f", työkansio {TYOKANSIO}\n"
     +f", asetustiedosto {ASETUSTIEDOSTO}"
+    )
+print(kokoonpatostr)
+LOGGER.info(
+    kokoonpatostr
     )
 
 IP = None
@@ -62,8 +66,8 @@ def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO, asetusnimi=LOKAALI_KONE):
             )
         LOGGER.error(errmsg)
         raise OSError(errmsg)
-    IP_OSOITE = config.get(LOKAALI_KONE, "ip")
-    PORTTI = config.get(LOKAALI_KONE, "portti")
+    IP_OSOITE = config.get(asetusnimi, "ip")
+    PORTTI = config.get(asetusnimi, "portti")
     # Jos ei annettu, koeta selvittää
     if not IP_OSOITE:
         IP_OSOITE = rget("https://api.ipify.org").content.decode("ascii")

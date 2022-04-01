@@ -66,7 +66,7 @@ def lue_kuvatietokannat():
         # Muokkaa puun juurisolmu juttelumuotoon
         INTERNETPUU.kansio = "internet"
 
-def lue_asetustiedosto(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAALI_KONE):
+def lue_asetukset_tiedostosta(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAALI_KONE):
     '''
     Määritä asetukset annetusta ini-tiedostosta.
     '''
@@ -92,4 +92,4 @@ def lue_asetustiedosto(polku=ASETUSTIEDOSTO_TIETOKANNAT, asetusnimi=LOKAALI_KONE
 
 # Luetaan tietokannat mielellään vain kun tarvitsee
 if not INTERNET:
-    lue_asetustiedosto()
+    lue_asetukset_tiedostosta()
