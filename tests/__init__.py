@@ -104,7 +104,6 @@ def luo_testidata():
     puu = Tiedostopuu.diktista(puudikti)
     def luo_puuttuvat(kansio, vainparilliset=False):
         kansiopolku = kansio.hae_nykyinen_polku()
-        print(kansiopolku)
         if not os.path.exists(kansiopolku):
             os.makedirs(kansiopolku)
         for biisi in kansio.tiedostot:

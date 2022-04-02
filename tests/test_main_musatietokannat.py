@@ -11,11 +11,12 @@ from pettanflask.pettan_musatietokanta import api_musatietokanta as musa_api
 from . import IP
 
 try:
-    vastaus = req.get(IP)
+    vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"testi"})
 except req.exceptions.ConnectionError:
     print(f"Palvelin ei pyöri osoitteessa {IP}, ei voida testata...")
     assert False
 assert vastaus.status_code == 200
+assert "testi" in vastaus.text
 
 
 def test_haku_huonot_data_avaimet_parseri():
@@ -440,3 +441,8 @@ def test_musatietokanta_lataus_eiole():
             print(vastaus_data)
             assert vastaus.status_code == 200
             assert int(vastaus_data) == biisinumero
+
+def test_palauta_normitilaan():
+    vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"normaali"})
+    assert vastaus.status_code == 200
+    assert "normaali" in vastaus.text

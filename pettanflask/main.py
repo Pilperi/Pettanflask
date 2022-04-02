@@ -5,7 +5,6 @@ kutsuu oikeaa funktiota pyyntöargumentin
 perusteella.
 '''
 import os
-import logging
 
 from flask import Flask
 from flask_restful import Api
@@ -20,8 +19,6 @@ from pettanflask import api_main
 from pettanflask.pettan_html import api_html
 from pettanflask.pettan_musatietokanta import api_musatietokanta
 
-LOGGER = logging.getLogger(__name__)
-
 app = Flask(__name__) # flask
 api = Api(app) # rest
 
@@ -32,6 +29,8 @@ api = Api(app) # rest
 # Ylläpito
 api.add_resource(api_main.MoiMaailma, "/")
 api.add_resource(api_main.Kuole, "/kuole")
+api.add_resource(api_main.VaihdaMoodia, "/aktivoi_moodi")
+
 
 # HTML-jutut
 api.add_resource(api_html.Kuvakansio,
@@ -58,12 +57,5 @@ api.add_resource(api_musatietokanta.Musatietokanta_lataus,
 
 #-------------------------------------------------------------------------------
 
-# Devaussetit
 if __name__=="__main__":
-    # Testi-ini @ ../
-    inisijainti = os.path.dirname(os.path.dirname(__file__))
-    inisijainti = os.path.join(inisijainti, "tests", "data", "testiasetukset.ini")
-    vakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
-    musavakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
-    htmlvakiot.lue_asetukset_tiedostosta(polku=inisijainti, asetusnimi="testi")
     app.run(debug=True)
