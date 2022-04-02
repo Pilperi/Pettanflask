@@ -4,20 +4,41 @@ Palvelimen tulee pyöriä paikallisesti testien ajan,
 jotta juttelufunktioita voi testata.
 '''
 import json
+import time
+import threading
 import requests as req
+
+from pettanflask import main as pettanmain
+from pettanflask import api_main
 from pettanflask import pettan_musatietokanta as musavak
 from pettanflask.pettan_musatietokanta import api_musatietokanta as musa_api
 
 from . import IP
 
-try:
-    vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"testi"})
-except req.exceptions.ConnectionError:
-    print(f"Palvelin ei pyöri osoitteessa {IP}, ei voida testata...")
-    assert False
-assert vastaus.status_code == 200
-assert "testi" in vastaus.text
+startattiin_manuaalisesti = False
+thread = threading.Thread(target=pettanmain.app.run)
 
+def test_palvelin_kaynnissa():
+    '''
+    Tarkista pyöriikö palvelin. Jos ei, käynnistä.
+    Laita testien ajaksi testimoodiin.
+    '''
+    global startattiin_manuaalisesti
+    try:
+        vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"testi"})
+        assert vastaus.status_code == 200
+        assert "testi" in vastaus.text
+        print(f"Palvelin pyörii osoitteessa {IP}")
+    except req.exceptions.ConnectionError:
+        print(f"Palvelin ei pyöri osoitteessa {IP}, yritetään aktivoida...")
+        startattiin_manuaalisesti = True
+        thread.start()
+        time.sleep(1)
+        try:
+            vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"testi"})
+        except req.exceptions.ConnectionError:
+            print(f"Palvelin ei pyöri osoitteessa {IP}, ei saada ajettua testejä...")
+            assert False
 
 def test_haku_huonot_data_avaimet_parseri():
     '''
@@ -442,7 +463,12 @@ def test_musatietokanta_lataus_eiole():
             assert vastaus.status_code == 200
             assert int(vastaus_data) == biisinumero
 
+
 def test_palauta_normitilaan():
     vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"normaali"})
     assert vastaus.status_code == 200
     assert "normaali" in vastaus.text
+    # Tapa jos käynnistettiin ite
+    if startattiin_manuaalisesti:
+        vastaus = req.get(IP+"kuole")
+        assert vastaus.status_code == 200
