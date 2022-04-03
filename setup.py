@@ -3,7 +3,7 @@ import os
 
 setuptools.setup(
     name="pettanflask",
-    version="2022.03.22",
+    version="2022.04.03",
     url="https://www.github.com/Pilperi/Pettanflask",
     author="Pilperi",
     description="Pettankone HTTP-palvelimena.",

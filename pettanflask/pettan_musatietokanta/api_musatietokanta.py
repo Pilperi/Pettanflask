@@ -6,6 +6,7 @@ import json
 from flask import make_response, jsonify, abort, send_from_directory, request
 from flask_restful import Resource, reqparse
 
+from tiedostohallinta.class_http import Pyynto, Vastaus
 from tiedostohallinta.class_tiedostopuu import Tiedostopuu
 from tiedostohallinta.class_biisiselaus import Hakukriteerit
 
@@ -106,44 +107,13 @@ class Musatietokanta_haku(Resource):
         anna_latauslista(dict)
             Muuntaa annetun tiedostopuun listaksi latauskelpoisia polkuja
         '''
-        args = parser_tietokantahaku.parse_args()
-        toimenpide = args.get("TOIMENPIDE")
-        # Parseri ei osaa hoitaa sisäkkäisiä tyyppitarkastuksia,
-        # lue rautalangalla (läh. dictit taipui str(dict))
-        argumentit = request.get_json(force=True)["ARGUMENTIT"]
-        if not isinstance(argumentit, list):
-            argumentit = [argumentit]
-        # Toimenpide määrittelemätön tai tuntematon
-        if toimenpide not in PYYNTOMAP_HAKU:
-            paluuarvo = {
-                "VASTAUS": None,
-                "VIRHE": f"Ei toimintoa pyynnölle TOIMENPIDE={toimenpide}"
-                }
-            return make_response(jsonify(paluuarvo), 400)
-        # Tarkista sisäänmenoargumenttien määrä
-        if len(argumentit) != len(ARGUMENTTITYYPIT[toimenpide]):
-            paluuarvo = {
-                "VASTAUS": None,
-                "VIRHE": (
-                    f"Toimenpide {toimenpide} vaatii"
-                    +f" {len(ARGUMENTTITYYPIT[toimenpide])} argumenttia,"
-                    +f" saatiin {len(argumentit)}."
-                    )
-                }
-            return make_response(jsonify(paluuarvo), 400)
-        # Tarkista sisäänmenoargumenttien laatu
-        if not all(isinstance(argumentit[i], ARGUMENTTITYYPIT[toimenpide][i])
-            for i in range(len(argumentit))
-            ):
-            paluuarvo = {
-                "VASTAUS": None,
-                "VIRHE": (
-                    f"Toimenpiteen {toimenpide} argumentit ovat"
-                    +f" {AGUMENTTIKUVAUKSET[toimenpide]}"
-                    +f", saatiin {[type(arg).__name__ for arg in argumentit]}."
-                    )
-                }
-            return make_response(jsonify(paluuarvo), 400)
+        try:
+            pyynto = Pyynto(request.get_json(force=True))
+        except ValueError as err:
+            vastaus = Vastaus(None, err)
+            return make_response(jsonify(vastaus.json()), 400)
+        toimenpide = pyynto.toimenpide
+        argumentit = pyynto.argumentit
         # Suorita kutsu. Toimenpidefunktio huolehtii vastauksen kasaamisesta
         return PYYNTOMAP_HAKU[toimenpide](*argumentit)
 

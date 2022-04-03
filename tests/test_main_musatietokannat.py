@@ -8,6 +8,8 @@ import time
 import threading
 import requests as req
 
+from tiedostohallinta.class_http import Vastaus
+
 from pettanflask import main as pettanmain
 from pettanflask import api_main
 from pettanflask import pettan_musatietokanta as musavak
@@ -25,7 +27,8 @@ def test_palvelin_kaynnissa():
     '''
     global startattiin_manuaalisesti
     try:
-        vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"testi"})
+        vastaus = req.post(IP+"aktivoi_moodi",
+            json={"MOODI":"testi"})
         assert vastaus.status_code == 200
         assert "testi" in vastaus.text
         print(f"Palvelin pyörii osoitteessa {IP}")
@@ -35,7 +38,8 @@ def test_palvelin_kaynnissa():
         thread.start()
         time.sleep(1)
         try:
-            vastaus = req.post(IP+"aktivoi_moodi", json={"MOODI":"testi"})
+            vastaus = req.post(IP+"aktivoi_moodi",
+                json={"MOODI":"testi"})
         except req.exceptions.ConnectionError:
             print(f"Palvelin ei pyöri osoitteessa {IP}, ei saada ajettua testejä...")
             assert False
@@ -44,22 +48,19 @@ def test_haku_huonot_data_avaimet_parseri():
     '''
     Katso että palauttaa oikean virhekoodin kun sisäänmenodata on killissä.
     '''
-    # Pyynnön avainsanat väärin -> message
-    args = {"VÄÄRÄ": "anna_tietokanta", "NIMI": ["testi-1"]}
     # Kokonaan ilman json-kenttää
-    vastaus = req.post(IP+"musatietokanta")
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("message")
-    assert "VASTAUS" not in vastaus_json
+    vastaus = Vastaus(req.post(IP+"musatietokanta"))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
     # Huonoilla avainsanoilla:
-    vastaus = req.post(IP+"musatietokanta", json=args)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("message")
-    assert "VASTAUS" not in vastaus_json
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"VÄÄRÄ": "anna_tietokanta", "NIMI": ["testi-1"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
 
 
 def test_haku_huonot_toimenpiteet_parseri():
@@ -67,26 +68,26 @@ def test_haku_huonot_toimenpiteet_parseri():
     Katso että TOIMENPIDE-kenttä vaaditaan oikein.
     '''
     # Puuttuu kokonaan
-    vastaus = req.post(IP+"musatietokanta", json={"ARGUMENTIT": ["testi-1"]})
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("message")
-    assert "VASTAUS" not in vastaus_json
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"ARGUMENTIT": ["testi-1"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
     # Ei tunnettu
-    vastaus = req.post(IP+"musatietokanta", json={"TOIMENPIDE": "väärä", "ARGUMENTIT": ["testi-1"]})
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("message")
-    assert "VASTAUS" not in vastaus_json
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "väärä", "ARGUMENTIT": ["testi-1"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
     # Datatyypit killissä
-    vastaus = req.post(IP+"musatietokanta", json={"TOIMENPIDE":1, "ARGUMENTIT":["testi-1"]})
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("message")
-    assert "VASTAUS" not in vastaus_json
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE":1, "ARGUMENTIT":["testi-1"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
 
 
 def test_haku_huonot_argumentit_parseri():
@@ -94,12 +95,12 @@ def test_haku_huonot_argumentit_parseri():
     Katso että argumentit vaaditaan aina.
     '''
     # Argumenttikenttä puuttuu
-    vastaus = req.post(IP+"musatietokanta", json={"TOIMENPIDE": "anna_tietokanta"})
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("message")
-    assert "VASTAUS" not in vastaus_json
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_tietokanta"}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
 
 
 def test_haku_get():
@@ -107,38 +108,29 @@ def test_haku_get():
     Testaa että GET antaa pyyntödokumentaation.
     '''
     # Standardi kutsu
-    vastaus = req.get(IP+"musatietokanta")
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "VIRHE" in vastaus_json
-    assert vastaus_json.get("VIRHE") is None
-    assert "VASTAUS" in vastaus_json
-    assert vastaus_json.get("VASTAUS") == {
+    vastaus = Vastaus(req.get(IP+"musatietokanta"))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.vastaus == {
         pyynto: [tyyppi.__name__ for tyyppi in tyyppilista]
         for pyynto,tyyppilista in musa_api.ARGUMENTTITYYPIT.items()
         }
+    assert vastaus.virhe is None
     # Argumentit saa olla messissä kun ei niillä tehdä mitään
-    vastaus = req.get(IP+"musatietokanta", json={"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT":["testi-1"]})
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "VIRHE" in vastaus_json
-    assert vastaus_json.get("VIRHE") is None
-    assert "VASTAUS" in vastaus_json
-    assert vastaus_json.get("VASTAUS") == {
+    vastaus = Vastaus(req.get(IP+"musatietokanta", json={"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT":["testi-1"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus == {
         pyynto: [tyyppi.__name__ for tyyppi in tyyppilista]
         for pyynto,tyyppilista in musa_api.ARGUMENTTITYYPIT.items()
         }
     # Myös ihan missä muodossa sattuu
-    vastaus = req.get(IP+"musatietokanta", json={"VÄÄRÄ": 1, "ARVO": 2})
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "VIRHE" in vastaus_json
-    assert vastaus_json.get("VIRHE") is None
-    assert "VASTAUS" in vastaus_json
-    assert vastaus_json.get("VASTAUS") == {
+    vastaus = Vastaus(req.get(IP+"musatietokanta", json={"VÄÄRÄ": 1, "ARVO": 2}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus == {
         pyynto: [tyyppi.__name__ for tyyppi in tyyppilista]
         for pyynto,tyyppilista in musa_api.ARGUMENTTITYYPIT.items()
         }
@@ -148,17 +140,14 @@ def test_haku_listaa_tietokannat():
     '''
     Käytettävissä olevat tietokannat listautuu oikein.
     '''
-    pyynto = {"TOIMENPIDE": "listaa_tietokannat", "ARGUMENTIT": [None]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("message") is None
-    assert "VIRHE" in vastaus_json
-    assert vastaus_json.get("VIRHE") is None
-    assert isinstance(vastaus_json.get("VASTAUS"), list)
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "listaa_tietokannat", "ARGUMENTIT": [None]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert isinstance(vastaus.vastaus, list)
     for tietokanta in musavak.TIETOKANNAT:
-        assert tietokanta in vastaus_json.get("VASTAUS")
+        assert tietokanta in vastaus.vastaus
 
 
 def test_anna_tietokanta_huonot_agumentit():
@@ -166,32 +155,26 @@ def test_anna_tietokanta_huonot_agumentit():
     Tietokanta-JSONin lataus ei toimi jos pyynnöt on tyhmiä.
     '''
     # Väärä datatyyppi
-    pyynto = {"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": None}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VASTAUS"] is None
-    assert vastaus_json["VIRHE"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": None}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
     # Väärä määrä argumentteja
-    pyynto = {"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["None", "None"]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VASTAUS"] is None
-    assert vastaus_json["VIRHE"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["None", "None"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
     # Ei löydy
-    pyynto = {"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["None"]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 404
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VASTAUS"] is None
-    assert vastaus_json["VIRHE"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["None"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 404
+    assert vastaus.vastaus is None
+    assert vastaus.virhe
 
 
 def test_anna_tietokanta():
@@ -199,25 +182,19 @@ def test_anna_tietokanta():
     Anna tietokanta nimen perusteella.
     '''
     # Ykkössetti
-    pyynto = {"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["testi-1"]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"] is None
-    assert vastaus_json["VASTAUS"] is not None
-    assert vastaus_json["VASTAUS"] == musavak.BIISIDIKTIT["testi-1"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["testi-1"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus == musavak.BIISIDIKTIT["testi-1"]
     # Kakkossetti
-    pyynto = {"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["testi-2"]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"] is None
-    assert vastaus_json["VASTAUS"] is not None
-    assert vastaus_json["VASTAUS"] == musavak.BIISIDIKTIT["testi-2"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_tietokanta", "ARGUMENTIT": ["testi-2"]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus == musavak.BIISIDIKTIT["testi-2"]
 
 
 def test_etsi_tietokannasta_huonot_argumentit():
@@ -227,51 +204,41 @@ def test_etsi_tietokannasta_huonot_argumentit():
     tietokanta = "testi-1"
     haku = {"artistissa": ["0"]}
     # Väärä määrä argumentteja
-    pyynto = {"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [tietokanta]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"]
-    assert vastaus_json["VASTAUS"] is None
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [tietokanta]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.virhe
+    assert vastaus.vastaus is None
     # Oikea määrä argumentteja mutta väärää datatyyppiä
     # Molemmat
-    pyynto = {"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [None, None]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"]
-    assert vastaus_json["VASTAUS"] is None
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [None, None]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.virhe
+    assert vastaus.vastaus is None
     # eka
-    pyynto = {"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [None, haku]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"]
-    assert vastaus_json["VASTAUS"] is None
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [None, haku]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.virhe
+    assert vastaus.vastaus is None
     # toka
-    pyynto = {"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [tietokanta, None]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"]
-    assert vastaus_json["VASTAUS"] is None
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [tietokanta, None]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.virhe
+    assert vastaus.vastaus is None
     # Ei löydy tietokantaa
-    pyynto = {"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": ["eiole", haku]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 404
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"]
-    assert vastaus_json["VASTAUS"] is None
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": ["eiole", haku]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 404
+    assert vastaus.virhe
+    assert vastaus.vastaus is None
 
 
 def test_etsi_tietokannasta_onnistuva():
@@ -280,15 +247,13 @@ def test_etsi_tietokannasta_onnistuva():
     '''
     tietokanta = "testi-1"
     haku = {"artistissa": ["0"]} # kaikki parilliset
-    pyynto = {"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [tietokanta, haku]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert "message" not in vastaus_json
-    assert vastaus_json["VIRHE"] is None
-    assert vastaus_json["VASTAUS"]
-    puudikti = vastaus_json["VASTAUS"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "etsi_tietokannasta", "ARGUMENTIT": [tietokanta, haku]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus
+    puudikti = vastaus.vastaus
     # Juuri: 0.mp3
     assert puudikti["kansio"] == tietokanta
     assert len(puudikti["tiedostot"]) == 1
@@ -308,29 +273,26 @@ def test_anna_latauslista_huonot_argumentit():
     Testaa että tulee oikeat virheet kun yritetään tehdä tyhmästi.
     '''
     # Väärä määrä dataa
-    pyynto = {"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [{1:2}, {3:4}]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("VIRHE")
-    assert vastaus_json["VASTAUS"] is None
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [{1:2}, {3:4}]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.virhe
+    assert vastaus.vastaus is None
     # Oikea määrä mutta väärää datatyyppiä
-    pyynto = {"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [1]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 400
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json.get("VIRHE")
-    assert vastaus_json["VASTAUS"] is None
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [1]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 400
+    assert vastaus.virhe
+    assert vastaus.vastaus is None
     # Oikeaa datatyyppiä mutta paska puu
-    pyynto = {"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [{1:2}]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json["VIRHE"] is None
-    assert vastaus_json["VASTAUS"] == []
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [{1:2}]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus == []
 
 
 def test_anna_latauslista():
@@ -346,15 +308,14 @@ def test_anna_latauslista():
         "testi-1/2/3-4/3.mp3",
         "testi-1/2/3-4/4.mp3",
         ]
-    pyynto = {"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [dikti_1]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json["VIRHE"] is None
-    assert vastaus_json["VASTAUS"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [dikti_1]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus
     for polku in odotettu:
-        assert polku in vastaus_json["VASTAUS"]
+        assert polku in vastaus.vastaus
     # Karsittu versio
     dikti_1b = musavak.BIISIDIKTIT["testi-1"]["alikansiot"][1]
     odotettu = [
@@ -366,17 +327,16 @@ def test_anna_latauslista():
         "testi-1/0.mp3",
         "testi-1/1/1.mp3",
         ]
-    pyynto = {"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [dikti_1b]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json["VIRHE"] is None
-    assert vastaus_json["VASTAUS"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [dikti_1b]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus
     for polku in odotettu:
-        assert polku in vastaus_json["VASTAUS"]
+        assert polku in vastaus.vastaus
     for polku in ei_odotettu:
-        assert polku not in vastaus_json["VASTAUS"]
+        assert polku not in vastaus.vastaus
     # Kakkosdikti antaa listan ml. tiedostot joita ei ole
     dikti_2 = musavak.BIISIDIKTIT["testi-2"]
     odotettu = [
@@ -386,15 +346,14 @@ def test_anna_latauslista():
         "testi-2/2/3-4/3.mp3",
         "testi-2/2/3-4/4.mp3",
         ]
-    pyynto = {"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [dikti_2]}
-    vastaus = req.post(IP+"musatietokanta", json=pyynto)
-    assert vastaus.status_code == 200
-    vastaus_json = vastaus.json()
-    print(vastaus_json)
-    assert vastaus_json["VIRHE"] is None
-    assert vastaus_json["VASTAUS"]
+    vastaus = Vastaus(req.post(IP+"musatietokanta",
+        json={"TOIMENPIDE": "anna_latauslista", "ARGUMENTIT": [dikti_2]}))
+    print(vastaus.json())
+    assert vastaus.koodi == 200
+    assert vastaus.virhe is None
+    assert vastaus.vastaus
     for polku in odotettu:
-        assert polku in vastaus_json["VASTAUS"]
+        assert polku in vastaus.vastaus
 
 
 def test_musatietokanta_lataus_onnistuva_args():
