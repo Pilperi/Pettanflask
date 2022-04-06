@@ -11,7 +11,9 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires = [
         "tiedostohallinta @ git+https://github.com/Pilperi/Tiedostohallinta",
-        "requests"
+        "requests",
+        "flask",
+        "flask_restful",
 		],
 	python_requires=">=3.8, <4",
     classifiers=[
