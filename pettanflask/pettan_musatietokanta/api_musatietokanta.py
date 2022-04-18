@@ -143,7 +143,10 @@ class Musatietokanta_lataus(Resource):
             args = parser_biisilataus.parse_args()
             polku = args.get("polku")
         if not isinstance(polku, str):
-            abort(400)
+            errmsg = (
+                f"Odotettiin str latauspolulle, saatiin {type(polku)} {polku}"
+                )
+            abort(400, errmsg)
         # Katso mikä on polun juuri
         splitattu = os.path.split(polku)
         juuri = os.path.dirname(polku)
@@ -153,12 +156,21 @@ class Musatietokanta_lataus(Resource):
         # Hae "juuren" todellinen polku
         oikeapolku = musavak.PAIKALLISPOLUT.get(juuri)
         if oikeapolku is None or len(polku) <= len(juuri)+1:
-            abort(404)
+            errmsg = (
+                f"Ei löydy tiedostoa {polku}."
+                )
+            abort(404, errmsg)
         alipolku = polku[len(juuri)+1:]
         try:
             return send_from_directory(oikeapolku, alipolku)
         except (FileNotFoundError, PermissionError) as err:
             if isinstance(err, FileNotFoundError):
-                abort(404)
+                errmsg = (
+                    f"Ei löydy tiedostoa {polku}."
+                    )
+                abort(404, errmsg)
             else:
-                abort(403)
+                errmsg = (
+                    f"Ei saatu luettua tiedostoa {polku}."
+                    )
+                abort(403, errmsg)

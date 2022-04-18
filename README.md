@@ -16,3 +16,5 @@ Asennus ja riippuvuudet:
 - Riippuvuudet on aika kevyet, lukee `setup.py`. Läh. Tiedostohallinta, flask, requests.
 
 - Setit saa asennettua `pip`illä kun laittaa siihen että `pip install git+https://github.com/Pilperi/Pettanflask`
+
+- Flask-palvelinten ajoon löytyy ohjeet netistä, oleellista pitää huolta että `FLASK_APP` osoittaa paketin `main.py`-tiedostoon ja että ajaessa kutsuu nimenomaan `flask run --host=0.0.0.0` jos haluaa että palvelin näkyy ulkomaailmallekin eikä vain sisäverkossa.
