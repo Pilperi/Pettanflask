@@ -7,6 +7,8 @@ import logging
 from flask import make_response, request
 from flask_restful import Resource, reqparse
 
+from tiedostohallinta import main as th_main
+
 import pettanflask as vakiot
 import pettanflask.pettan_musatietokanta as musavakiot
 import pettanflask.pettan_html as htmlvakiot
@@ -25,6 +27,8 @@ parser_moodi.add_argument(
     default="normaali",
     location="json"
     )
+PAIVITYS_MENOSSA = False
+
 
 class MoiMaailma(Resource):
     '''
@@ -84,4 +88,29 @@ class VaihdaMoodia(Resource):
             paluustr = f"Ei moodia {moodi}."
             paluukoodi = 400
         LOGGER.debug(paluustr)
+        return make_response(paluustr, paluukoodi)
+
+class PaivitaTietokannat(Resource):
+    '''
+    Päivitä palvelimen tietokannat ajan tasalle.
+    '''
+    def post(self):
+        global PAIVITYS_MENOSSA
+        if PAIVITYS_MENOSSA:
+            paluustr = "Tietokantojen päivitys on jo menossa."
+            paluukoodi = 400
+            LOGGER.debug(f"{paluukoodi}: {paluustr}")
+        else:
+            PAIVITYS_MENOSSA = True
+            try:
+                th_main.main()
+                vakiot.lue_asetukset_tiedostosta()
+                musavakiot.lue_asetukset_tiedostosta()
+                htmlvakiot.lue_asetukset_tiedostosta()
+                paluustr = "Asetukset päivitetty."
+                paluukoodi = 200
+            except (ValueError, OSError, KeyError) as err:
+                paluustr = "Päivitys ei onnistunut: {err}"
+                paluukoodi = 400
+            PAIVITYS_MENOSSA = False
         return make_response(paluustr, paluukoodi)

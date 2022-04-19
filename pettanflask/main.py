@@ -30,7 +30,7 @@ api = Api(app) # rest
 api.add_resource(api_main.MoiMaailma, "/")
 api.add_resource(api_main.Kuole, "/kuole")
 api.add_resource(api_main.VaihdaMoodia, "/aktivoi_moodi")
-
+api.add_resource(api_main.PaivitaTietokannat, "/paivita_tietokannat")
 
 # HTML-jutut
 api.add_resource(api_html.Kuvakansio,
